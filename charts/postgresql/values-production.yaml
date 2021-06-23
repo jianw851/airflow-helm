@@ -238,9 +238,9 @@ persistence:
   ##
   subPath: ""
 
-  # storageClass: "-"
+  storageClass: local-airflow-postgresql
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   size: 8Gi
   annotations: {}
 

@@ -952,7 +952,7 @@ dags:
     # If using a custom storageClass, pass name here
     storageClassName: local-airflow-git-sync
     # access mode of the persistent volume
-    accessMode: ReadWriteOnce
+    accessMode: ReadWriteMany
     ## the name of an existing PVC to use
     existingClaim:
   gitSync:
