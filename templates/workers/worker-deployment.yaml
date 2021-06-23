@@ -77,6 +77,10 @@ spec:
         {{- toYaml .Values.airflowPodAnnotations | nindent 8 }}
         {{- end }}
     spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
       nodeSelector:
 {{ toYaml $nodeSelector | indent 8 }}
       affinity:

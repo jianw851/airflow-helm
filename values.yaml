@@ -321,7 +321,7 @@ kerberos:
 # Airflow Worker Config
 workers:
   # Number of airflow celery workers in StatefulSet
-  replicas: 1
+  replicas: 3
   # Update Strategy when worker is deployed as a StatefulSet
   updateStrategy: ~
   # Update Strategy when worker is deployed as a Deployment
@@ -361,9 +361,9 @@ workers:
     # Enable persistent volumes
     enabled: true
     # Volume size for worker StatefulSet
-    size: 100Gi
+    size: 10Gi
     # If using a custom storageClass, pass name ref to all statefulSets here
-    storageClassName:
+    storageClassName: local-airflow-worker
     # Execute init container to chown log directory.
     # This is currently only needed in kind, due to usage
     # of local-path provisioner.
@@ -428,7 +428,7 @@ scheduler:
     periodSeconds: 30
   # Airflow 2.0 allows users to run multiple schedulers,
   # However this feature is only recommended for MySQL 8+ and Postgres
-  replicas: 1
+  replicas: 3
 
   # Create ServiceAccount
   serviceAccount:
@@ -548,7 +548,7 @@ webserver:
     enabled: true
     role: Admin
     username: admin
-    email: admin@example.com
+    email: jw@liveget.com
     firstName: admin
     lastName: user
     password: admin
@@ -770,9 +770,9 @@ redis:
     # Enable persistent volumes
     enabled: true
     # Volume size for worker StatefulSet
-    size: 1Gi
+    size: 5Gi
     # If using a custom storageClass, pass name ref to all statefulSets here
-    storageClassName:
+    storageClassName: local-airflow-redis
 
   resources: {}
   #  limits:
@@ -948,9 +948,9 @@ dags:
     # Enable persistent volume for storing dags
     enabled: false
     # Volume size for dags
-    size: 1Gi
+    size: 5Gi
     # If using a custom storageClass, pass name here
-    storageClassName:
+    storageClassName: local-airflow-git-sync
     # access mode of the persistent volume
     accessMode: ReadWriteOnce
     ## the name of an existing PVC to use
@@ -1019,8 +1019,8 @@ logs:
     # Enable persistent volume for storing logs
     enabled: false
     # Volume size for logs
-    size: 100Gi
+    size: 10Gi
     # If using a custom storageClass, pass name here
-    storageClassName:
+    storageClassName: local-airflow-logs
     ## the name of an existing PVC to use
     existingClaim:
