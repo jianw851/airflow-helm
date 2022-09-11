@@ -332,7 +332,7 @@ data:
   # Otherwise pass connection values in
   metadataConnection:
     user: jwang
-    pass: KingSwordkao340!
+    pass: <todo> 
     protocol: mysql
     host: 10.103.129.116
     port: 3306
@@ -343,7 +343,7 @@ data:
   # or, you can use a different database
   resultBackendConnection:
     user: jwang
-    pass: KingSwordkao340!
+    pass:  <todo>
     protocol: mysql
     host: 10.103.129.116
     port: 3306
@@ -913,7 +913,7 @@ webserver:
     email: jw@liveget.com
     firstName: admin
     lastName: user
-    password: KingSwordkao340!
+    password: <todo>
 
   # Launch additional containers into webserver.
   extraContainers: []
