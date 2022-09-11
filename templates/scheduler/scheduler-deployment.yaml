@@ -31,6 +31,8 @@
 {{- $nodeSelector := or .Values.scheduler.nodeSelector .Values.nodeSelector }}
 {{- $affinity := or .Values.scheduler.affinity .Values.affinity }}
 {{- $tolerations := or .Values.scheduler.tolerations .Values.tolerations }}
+{{- $topologySpreadConstraints := or .Values.scheduler.topologySpreadConstraints .Values.topologySpreadConstraints }}
+{{- $securityContext := include "airflowSecurityContext" (list . .Values.scheduler) }}
 
 kind: {{ if $stateful }}StatefulSet{{ else }}Deployment{{ end }}
 apiVersion: apps/v1
@@ -50,6 +52,14 @@ spec:
   serviceName: {{ .Release.Name }}-scheduler
 {{- end }}
   replicas: {{ .Values.scheduler.replicas }}
+  {{- if and $stateful .Values.scheduler.updateStrategy }}
+  updateStrategy:
+    {{- toYaml .Values.scheduler.updateStrategy | nindent 4 }}
+  {{- end }}
+  {{- if and (not $stateful) .Values.scheduler.strategy }}
+  strategy:
+    {{- toYaml .Values.scheduler.strategy | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       tier: airflow
@@ -77,31 +87,52 @@ spec:
         {{- if .Values.airflowPodAnnotations }}
         {{- toYaml .Values.airflowPodAnnotations | nindent 8 }}
         {{- end }}
+        {{- if .Values.scheduler.podAnnotations }}
+        {{- toYaml .Values.scheduler.podAnnotations | nindent 8 }}
+        {{- end }}
     spec:
-      tolerations:
-      - key: "node-role.kubernetes.io/master"
-        operator: "Exists"
-        effect: "NoSchedule"
+      {{- if .Values.scheduler.priorityClassName }}
+      priorityClassName: {{ .Values.scheduler.priorityClassName }}
+      {{- end }}
       nodeSelector:
 {{ toYaml $nodeSelector | indent 8 }}
       affinity:
+{{- if $affinity }}
 {{ toYaml $affinity | indent 8 }}
+{{- else }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  component: scheduler
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+{{- end }}
       tolerations:
 {{ toYaml $tolerations | indent 8 }}
+      topologySpreadConstraints:
+{{ toYaml $topologySpreadConstraints | indent 8 }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 10
       serviceAccountName: {{ include "scheduler.serviceAccountName" . }}
-      securityContext:
-        runAsUser: {{ .Values.uid }}
-        fsGroup: {{ .Values.gid }}
+      securityContext: {{ $securityContext | nindent 8 }}
       {{- if or .Values.registry.secretName .Values.registry.connection }}
       imagePullSecrets:
         - name: {{ template "registry_secret" . }}
       {{- end }}
       initContainers:
+        {{- if .Values.scheduler.waitForMigrations.enabled }}
         - name: wait-for-airflow-migrations
-          image: {{ template "airflow_image" . }}
+          resources:
+{{ toYaml .Values.scheduler.resources | indent 12 }}
+          image: {{ template "airflow_image_for_migrations" . }}
           imagePullPolicy: {{ .Values.images.airflow.pullPolicy }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ template "airflow_config_path" . }}
+              subPath: airflow.cfg
+              readOnly: true
           args:
           {{- include "wait-for-migrations-command" . | indent 10 }}
           envFrom:
@@ -109,12 +140,24 @@ spec:
           env:
           {{- include "custom_airflow_environment" . | indent 10 }}
           {{- include "standard_airflow_environment" . | indent 10 }}
+        {{- end }}
+        {{- if .Values.dags.gitSync.enabled }}
+        {{- include "git_sync_container" (dict "Values" .Values "is_init" "true") | nindent 8 }}
+        {{- end }}
+        {{- if .Values.scheduler.extraInitContainers }}
+        {{- toYaml .Values.scheduler.extraInitContainers | nindent 8 }}
+        {{- end }}
       containers:
         # Always run the main scheduler container.
         - name: scheduler
           image: {{ template "airflow_image" . }}
           imagePullPolicy: {{ .Values.images.airflow.pullPolicy }}
-          args: ["bash", "-c", "exec airflow scheduler"]
+          {{- if .Values.scheduler.command }}
+          command: {{ tpl (toYaml .Values.scheduler.command) . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.scheduler.args }}
+          args: {{ tpl (toYaml .Values.scheduler.args) . | nindent 12 }}
+          {{- end }}
           envFrom:
           {{- include "custom_airflow_environment_from" . | default "\n  []" | indent 10 }}
           env:
@@ -127,24 +170,11 @@ spec:
             periodSeconds: {{ .Values.scheduler.livenessProbe.periodSeconds }}
             exec:
               command:
-              - python
-              - -Wignore
-              - -c
-              - |
-                import os
-                os.environ['AIRFLOW__CORE__LOGGING_LEVEL'] = 'ERROR'
-                os.environ['AIRFLOW__LOGGING__LOGGING_LEVEL'] = 'ERROR'
-
-                from airflow.jobs.scheduler_job import SchedulerJob
-                from airflow.utils.db import create_session
-                from airflow.utils.net import get_hostname
-                import sys
-
-                with create_session() as session:
-                    job = session.query(SchedulerJob).filter_by(hostname=get_hostname()).order_by(
-                        SchedulerJob.latest_heartbeat.desc()).limit(1).first()
-
-                sys.exit(0 if job.is_alive() else 1)
+                  {{- if .Values.scheduler.livenessProbe.command }}
+                  {{ toYaml .Values.scheduler.livenessProbe.command  | nindent 16 }}
+                  {{- else}}
+                  {{- include "scheduler_liveness_check_command" . | nindent 16 }}
+                  {{- end }}
           {{- if and $local (not $elasticsearch) }}
           # Serve logs if we're in local mode and we don't have elasticsearch enabled.
           ports:
@@ -166,30 +196,42 @@ spec:
               mountPath: {{ template "airflow_config_path" . }}
               subPath: airflow.cfg
               readOnly: true
-{{- if .Values.airflowLocalSettings }}
+            {{- if .Values.airflowLocalSettings }}
             - name: config
               mountPath: {{ template "airflow_local_setting_path" . }}
               subPath: airflow_local_settings.py
               readOnly: true
-{{- end }}
-{{- if or .Values.dags.gitSync.enabled .Values.dags.persistence.enabled }}
-            - name: dags
-              mountPath: {{ template "airflow_dags_mount_path" . }}
-{{- end }}
+            {{- end }}
+            {{- if or .Values.dags.persistence.enabled .Values.dags.gitSync.enabled }}
+            {{- include "airflow_dags_mount" . | nindent 12 }}
+            {{- end }}
 {{- if .Values.scheduler.extraVolumeMounts }}
 {{ toYaml .Values.scheduler.extraVolumeMounts | indent 12 }}
 {{- end }}
 {{- if .Values.dags.gitSync.enabled }}
         {{- include "git_sync_container" . | indent 8 }}
 {{- end }}
-        # Always start the garbage collector sidecar.
-        - name: scheduler-gc
+        {{- if .Values.scheduler.logGroomerSidecar.enabled }}
+        - name: scheduler-log-groomer
+          resources:
+{{ toYaml .Values.scheduler.logGroomerSidecar.resources | indent 12 }}
           image: {{ template "airflow_image" . }}
           imagePullPolicy: {{ .Values.images.airflow.pullPolicy }}
-          args: ["bash", "/clean-logs"]
+          {{- if .Values.scheduler.logGroomerSidecar.command }}
+          command: {{ tpl (toYaml .Values.scheduler.logGroomerSidecar.command) . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.scheduler.logGroomerSidecar.args }}
+          args: {{ tpl (toYaml .Values.scheduler.logGroomerSidecar.args) . | nindent 12 }}
+          {{- end }}
+          {{ if .Values.scheduler.logGroomerSidecar.retentionDays }}
+          env:
+            - name: AIRFLOW__LOG_RETENTION_DAYS
+              value: "{{ .Values.scheduler.logGroomerSidecar.retentionDays }}"
+          {{- end }}
           volumeMounts:
             - name: logs
               mountPath: {{ template "airflow_logs" . }}
+          {{- end }}
 {{- if .Values.scheduler.extraContainers }}
 {{- toYaml .Values.scheduler.extraContainers | nindent 8 }}
 {{- end }}
@@ -222,11 +264,15 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: logs
+        {{- if .Values.workers.persistence.annotations }}
+        annotations:
+          {{- toYaml .Values.workers.persistence.annotations | nindent 10 }}
+        {{- end }}
       spec:
       {{- if .Values.workers.persistence.storageClassName }}
         storageClassName: {{ .Values.workers.persistence.storageClassName }}
       {{- end }}
-        accessModes: ["ReadWriteMany"]
+        accessModes: ["ReadWriteOnce"]
         resources:
           requests:
             storage: {{ .Values.workers.persistence.size }}

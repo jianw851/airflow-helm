@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: airflow
+  name: airflow-extra-env-variables
+data:
+  AIRFLOW_S3_BUCKET: "airflow"

@@ -1,4 +1,5 @@
 {{/* vim: set filetype=mustache: */}}
+
 {{/*
 Expand the name of the chart.
 */}}
@@ -10,70 +11,54 @@ Expand the name of the chart.
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "postgresql.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "postgresql.master.fullname" -}}
+{{- define "postgresql.primary.fullname" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- $fullname := default (printf "%s-%s" .Release.Name $name) .Values.fullnameOverride -}}
 {{- if .Values.replication.enabled -}}
-{{- printf "%s-%s" $fullname "master" | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-%s" $fullname "primary" | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
 {{- printf "%s" $fullname | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return the appropriate apiVersion for networkpolicy.
-*/}}
-{{- define "postgresql.networkPolicy.apiVersion" -}}
-{{- if semverCompare ">=1.4-0, <1.7-0" .Capabilities.KubeVersion.GitVersion -}}
-"extensions/v1beta1"
-{{- else if semverCompare "^1.7-0" .Capabilities.KubeVersion.GitVersion -}}
-"networking.k8s.io/v1"
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create chart name and version as used by the chart label.
-*/}}
-{{- define "postgresql.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
 Return the proper PostgreSQL image name
 */}}
 {{- define "postgresql.image" -}}
-{{- $registryName := .Values.image.registry -}}
-{{- $repositoryName := .Values.image.repository -}}
-{{- $tag := .Values.image.tag | toString -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+{{- end -}}
+
 {{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 doesn't support it, so we need to implement this if-else logic.
-Also, we can't use a single if because lazy evaluation is not an option
+Return the proper PostgreSQL metrics image name
 */}}
-{{- if .Values.global }}
-    {{- if .Values.global.imageRegistry }}
-        {{- printf "%s/%s:%s" .Values.global.imageRegistry $repositoryName $tag -}}
-    {{- else -}}
-        {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-    {{- end -}}
+{{- define "postgresql.metrics.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.metrics.image "global" .Values.global) }}
+{{- end -}}
+
+{{/*
+Return the proper image name (for the init container volume-permissions image)
+*/}}
+{{- define "postgresql.volumePermissions.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.volumePermissions.image "global" .Values.global) }}
+{{- end -}}
+
+{{/*
+Return the proper Docker Image Registry Secret Names
+*/}}
+{{- define "postgresql.imagePullSecrets" -}}
+{{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.metrics.image .Values.volumePermissions.image) "global" .Values.global) }}
+{{- end -}}
+
+{{/*
+Return PostgreSQL postgres user password
+*/}}
+{{- define "postgresql.postgres.password" -}}
+{{- if .Values.global.postgresql.postgresqlPostgresPassword }}
+    {{- .Values.global.postgresql.postgresqlPostgresPassword -}}
+{{- else if .Values.postgresqlPostgresPassword -}}
+    {{- .Values.postgresqlPostgresPassword -}}
 {{- else -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+    {{- randAlphaNum 10 -}}
 {{- end -}}
 {{- end -}}
 
@@ -114,7 +99,6 @@ Return PostgreSQL username
 {{- end -}}
 {{- end -}}
 
-
 {{/*
 Return PostgreSQL replication username
 */}}
@@ -149,61 +133,24 @@ Return PostgreSQL created database
 {{- end -}}
 
 {{/*
-Return the proper image name to change the volume permissions
-*/}}
-{{- define "postgresql.volumePermissions.image" -}}
-{{- $registryName := .Values.volumePermissions.image.registry -}}
-{{- $repositoryName := .Values.volumePermissions.image.repository -}}
-{{- $tag := .Values.volumePermissions.image.tag | toString -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 doesn't support it, so we need to implement this if-else logic.
-Also, we can't use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-    {{- if .Values.global.imageRegistry }}
-        {{- printf "%s/%s:%s" .Values.global.imageRegistry $repositoryName $tag -}}
-    {{- else -}}
-        {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-    {{- end -}}
-{{- else -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Return the proper PostgreSQL metrics image name
-*/}}
-{{- define "postgresql.metrics.image" -}}
-{{- $registryName :=  default "docker.io" .Values.metrics.image.registry -}}
-{{- $repositoryName := .Values.metrics.image.repository -}}
-{{- $tag := default "latest" .Values.metrics.image.tag | toString -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 doesn't support it, so we need to implement this if-else logic.
-Also, we can't use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-    {{- if .Values.global.imageRegistry }}
-        {{- printf "%s/%s:%s" .Values.global.imageRegistry $repositoryName $tag -}}
-    {{- else -}}
-        {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-    {{- end -}}
-{{- else -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Get the password secret.
 */}}
 {{- define "postgresql.secretName" -}}
 {{- if .Values.global.postgresql.existingSecret }}
-    {{- printf "%s" .Values.global.postgresql.existingSecret -}}
+    {{- printf "%s" (tpl .Values.global.postgresql.existingSecret $) -}}
 {{- else if .Values.existingSecret -}}
-    {{- printf "%s" .Values.existingSecret -}}
+    {{- printf "%s" (tpl .Values.existingSecret $) -}}
 {{- else -}}
-    {{- printf "%s" (include "postgresql.fullname" .) -}}
+    {{- printf "%s" (include "common.names.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return true if we should use an existingSecret.
+*/}}
+{{- define "postgresql.useExistingSecret" -}}
+{{- if or .Values.global.postgresql.existingSecret .Values.existingSecret -}}
+    {{- true -}}
 {{- end -}}
 {{- end -}}
 
@@ -211,9 +158,7 @@ Get the password secret.
 Return true if a secret object should be created
 */}}
 {{- define "postgresql.createSecret" -}}
-{{- if .Values.global.postgresql.existingSecret }}
-{{- else if .Values.existingSecret -}}
-{{- else -}}
+{{- if not (include "postgresql.useExistingSecret" .) -}}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -225,7 +170,7 @@ Get the configuration ConfigMap name.
 {{- if .Values.configurationConfigMap -}}
 {{- printf "%s" (tpl .Values.configurationConfigMap $) -}}
 {{- else -}}
-{{- printf "%s-configuration" (include "postgresql.fullname" .) -}}
+{{- printf "%s-configuration" (include "common.names.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 
@@ -236,7 +181,16 @@ Get the extended configuration ConfigMap name.
 {{- if .Values.extendedConfConfigMap -}}
 {{- printf "%s" (tpl .Values.extendedConfConfigMap $) -}}
 {{- else -}}
-{{- printf "%s-extended-configuration" (include "postgresql.fullname" .) -}}
+{{- printf "%s-extended-configuration" (include "common.names.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return true if a configmap should be mounted with PostgreSQL configuration
+*/}}
+{{- define "postgresql.mountConfigurationCM" -}}
+{{- if or (.Files.Glob "files/postgresql.conf") (.Files.Glob "files/pg_hba.conf") .Values.postgresqlConfiguration .Values.pgHbaConfiguration .Values.configurationConfigMap }}
+    {{- true -}}
 {{- end -}}
 {{- end -}}
 
@@ -247,7 +201,7 @@ Get the initialization scripts ConfigMap name.
 {{- if .Values.initdbScriptsConfigMap -}}
 {{- printf "%s" (tpl .Values.initdbScriptsConfigMap $) -}}
 {{- else -}}
-{{- printf "%s-init-scripts" (include "postgresql.fullname" .) -}}
+{{- printf "%s-init-scripts" (include "common.names.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 
@@ -259,44 +213,10 @@ Get the initialization scripts Secret name.
 {{- end -}}
 
 {{/*
-Return the proper Docker Image Registry Secret Names
+Get the metrics ConfigMap name.
 */}}
-{{- define "postgresql.imagePullSecrets" -}}
-{{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
-Also, we can not use a single if because lazy evaluation is not an option
-*/}}
-{{- if .Values.global }}
-{{- if .Values.global.imagePullSecrets }}
-imagePullSecrets:
-{{- range .Values.global.imagePullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- else if or .Values.image.pullSecrets .Values.metrics.image.pullSecrets .Values.volumePermissions.image.pullSecrets }}
-imagePullSecrets:
-{{- range .Values.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.metrics.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.volumePermissions.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- end -}}
-{{- else if or .Values.image.pullSecrets .Values.metrics.image.pullSecrets .Values.volumePermissions.image.pullSecrets }}
-imagePullSecrets:
-{{- range .Values.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.metrics.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- range .Values.volumePermissions.image.pullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- end -}}
+{{- define "postgresql.metricsCM" -}}
+{{- printf "%s-metrics" (include "common.names.fullname" .) -}}
 {{- end -}}
 
 {{/*
@@ -305,46 +225,145 @@ Get the readiness probe command
 {{- define "postgresql.readinessProbeCommand" -}}
 - |
 {{- if (include "postgresql.database" .) }}
-  pg_isready -U {{ include "postgresql.username" . | quote }} -d {{ (include "postgresql.database" .) | quote }} -h 127.0.0.1 -p {{ template "postgresql.port" . }}
+  exec pg_isready -U {{ include "postgresql.username" . | quote }} -d "dbname={{ include "postgresql.database" . }} {{- if .Values.tls.enabled }} sslcert={{ include "postgresql.tlsCert" . }} sslkey={{ include "postgresql.tlsCertKey" . }}{{- end }}" -h 127.0.0.1 -p {{ template "postgresql.port" . }}
 {{- else }}
-  pg_isready -U {{ include "postgresql.username" . | quote }} -h 127.0.0.1 -p {{ template "postgresql.port" . }}
+  exec pg_isready -U {{ include "postgresql.username" . | quote }} {{- if .Values.tls.enabled }} -d "sslcert={{ include "postgresql.tlsCert" . }} sslkey={{ include "postgresql.tlsCertKey" . }}"{{- end }} -h 127.0.0.1 -p {{ template "postgresql.port" . }}
 {{- end }}
 {{- if contains "bitnami/" .Values.image.repository }}
-  [ -f /opt/bitnami/postgresql/tmp/.initialized ]
+  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return  the proper Storage Class
+Compile all warnings into a single message, and call fail.
 */}}
-{{- define "postgresql.storageClass" -}}
+{{- define "postgresql.validateValues" -}}
+{{- $messages := list -}}
+{{- $messages := append $messages (include "postgresql.validateValues.ldapConfigurationMethod" .) -}}
+{{- $messages := append $messages (include "postgresql.validateValues.psp" .) -}}
+{{- $messages := append $messages (include "postgresql.validateValues.tls" .) -}}
+{{- $messages := without $messages "" -}}
+{{- $message := join "\n" $messages -}}
+
+{{- if $message -}}
+{{- printf "\nVALUES VALIDATION:\n%s" $message | fail -}}
+{{- end -}}
+{{- end -}}
+
 {{/*
-Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
-but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
+Validate values of Postgresql - If ldap.url is used then you don't need the other settings for ldap
 */}}
-{{- if .Values.global -}}
-    {{- if .Values.global.storageClass -}}
-        {{- if (eq "-" .Values.global.storageClass) -}}
-            {{- printf "storageClassName: \"\"" -}}
-        {{- else }}
-            {{- printf "storageClassName: %s" .Values.global.storageClass -}}
-        {{- end -}}
-    {{- else -}}
-        {{- if .Values.persistence.storageClass -}}
-              {{- if (eq "-" .Values.persistence.storageClass) -}}
-                  {{- printf "storageClassName: \"\"" -}}
-              {{- else }}
-                  {{- printf "storageClassName: %s" .Values.persistence.storageClass -}}
-              {{- end -}}
-        {{- end -}}
-    {{- end -}}
+{{- define "postgresql.validateValues.ldapConfigurationMethod" -}}
+{{- if and .Values.ldap.enabled (and (not (empty .Values.ldap.url)) (not (empty .Values.ldap.server))) }}
+postgresql: ldap.url, ldap.server
+    You cannot set both `ldap.url` and `ldap.server` at the same time.
+    Please provide a unique way to configure LDAP.
+    More info at https://www.postgresql.org/docs/current/auth-ldap.html
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate values of Postgresql - If PSP is enabled RBAC should be enabled too
+*/}}
+{{- define "postgresql.validateValues.psp" -}}
+{{- if and .Values.psp.create (not .Values.rbac.create) }}
+postgresql: psp.create, rbac.create
+    RBAC should be enabled if PSP is enabled in order for PSP to work.
+    More info at https://kubernetes.io/docs/concepts/policy/pod-security-policy/#authorizing-policies
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for podsecuritypolicy.
+*/}}
+{{- define "podsecuritypolicy.apiVersion" -}}
+{{- if semverCompare "<1.10-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- print "extensions/v1beta1" -}}
 {{- else -}}
-    {{- if .Values.persistence.storageClass -}}
-        {{- if (eq "-" .Values.persistence.storageClass) -}}
-            {{- printf "storageClassName: \"\"" -}}
-        {{- else }}
-            {{- printf "storageClassName: %s" .Values.persistence.storageClass -}}
-        {{- end -}}
-    {{- end -}}
+{{- print "policy/v1beta1" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for networkpolicy.
+*/}}
+{{- define "postgresql.networkPolicy.apiVersion" -}}
+{{- if semverCompare ">=1.4-0, <1.7-0" .Capabilities.KubeVersion.GitVersion -}}
+"extensions/v1beta1"
+{{- else if semverCompare "^1.7-0" .Capabilities.KubeVersion.GitVersion -}}
+"networking.k8s.io/v1"
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate values of Postgresql TLS - When TLS is enabled, so must be VolumePermissions
+*/}}
+{{- define "postgresql.validateValues.tls" -}}
+{{- if and .Values.tls.enabled (not .Values.volumePermissions.enabled) }}
+postgresql: tls.enabled, volumePermissions.enabled
+    When TLS is enabled you must enable volumePermissions as well to ensure certificates files have
+    the right permissions.
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the path to the cert file.
+*/}}
+{{- define "postgresql.tlsCert" -}}
+{{- if .Values.tls.autoGenerated }}
+    {{- printf "/opt/bitnami/postgresql/certs/tls.crt" -}}
+{{- else -}}
+    {{- required "Certificate filename is required when TLS in enabled" .Values.tls.certFilename | printf "/opt/bitnami/postgresql/certs/%s" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the path to the cert key file.
+*/}}
+{{- define "postgresql.tlsCertKey" -}}
+{{- if .Values.tls.autoGenerated }}
+    {{- printf "/opt/bitnami/postgresql/certs/tls.key" -}}
+{{- else -}}
+{{- required "Certificate Key filename is required when TLS in enabled" .Values.tls.certKeyFilename | printf "/opt/bitnami/postgresql/certs/%s" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the path to the CA cert file.
+*/}}
+{{- define "postgresql.tlsCACert" -}}
+{{- if .Values.tls.autoGenerated }}
+    {{- printf "/opt/bitnami/postgresql/certs/ca.crt" -}}
+{{- else -}}
+    {{- printf "/opt/bitnami/postgresql/certs/%s" .Values.tls.certCAFilename -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the path to the CRL file.
+*/}}
+{{- define "postgresql.tlsCRL" -}}
+{{- if .Values.tls.crlFilename -}}
+{{- printf "/opt/bitnami/postgresql/certs/%s" .Values.tls.crlFilename -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return true if a TLS credentials secret object should be created
+*/}}
+{{- define "postgresql.createTlsSecret" -}}
+{{- if and .Values.tls.autoGenerated (not .Values.tls.certificatesSecret) }}
+    {{- true -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the path to the CA cert file.
+*/}}
+{{- define "postgresql.tlsSecretName" -}}
+{{- if .Values.tls.autoGenerated }}
+    {{- printf "%s-crt" (include "common.names.fullname" .) -}}
+{{- else -}}
+    {{ required "A secret containing TLS certificates is required when TLS is enabled" .Values.tls.certificatesSecret }}
 {{- end -}}
 {{- end -}}

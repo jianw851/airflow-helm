@@ -29,7 +29,7 @@ ARG PGBOUNCER_SHA256="a0c13d10148f557e36ff7ed31793abb7a49e1f8b09aa2d4695d1c28fa1
 RUN apk --no-cache add make pkgconfig build-base libtool wget gcc g++ libevent-dev libressl-dev c-ares-dev ca-certificates
 # We are not using Dash so we can safely ignore the "Dash warning"
 # "In dash, something is not supported." https://github.com/koalaman/shellcheck/wiki/SC2169
-# hadolint ignore=SC2169
+# hadolint ignore=SC2169,SC3060
 RUN wget --progress=dot:giga "https://github.com/pgbouncer/pgbouncer/releases/download/pgbouncer_${PGBOUNCER_VERSION//\./_}/pgbouncer-${PGBOUNCER_VERSION}.tar.gz" \
     && echo "${PGBOUNCER_SHA256}  pgbouncer-${PGBOUNCER_VERSION}.tar.gz" | sha256sum -c - \
     && tar -xzvf pgbouncer-$PGBOUNCER_VERSION.tar.gz
@@ -51,11 +51,6 @@ ARG PGBOUNCER_VERSION
 ARG AIRFLOW_PGBOUNCER_VERSION
 ARG COMMIT_SHA
 
-LABEL org.apache.airflow.component="pgbouncer"
-LABEL org.apache.airflow.pgbouncer.version="${PGBOUNCER_VERSION}"
-LABEL org.apache.airflow.airflow-pgbouncer.version="${AIRFLOW_PGBOUNCER_VERSION}"
-LABEL org.apache.airflow.commit-sha="${COMMIT_SHA}"
-LABEL maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 # We want to make sure this one includes latest security fixes.
 # "Pin versions in apk add" https://github.com/hadolint/hadolint/wiki/DL3018
@@ -64,6 +59,12 @@ RUN apk --no-cache add libevent libressl c-ares
 
 COPY --from=builder /etc/pgbouncer /etc/pgbouncer
 COPY --from=builder /usr/bin/pgbouncer /usr/bin/pgbouncer
+
+LABEL org.apache.airflow.component="pgbouncer" \
+    org.apache.airflow.pgbouncer.version="${PGBOUNCER_VERSION}" \
+    org.apache.airflow.airflow-pgbouncer.version="${AIRFLOW_PGBOUNCER_VERSION}" \
+    org.apache.airflow.commit-sha="${COMMIT_SHA}" \
+    maintainer="Apache Airflow Community <dev@airflow.apache.org>"
 
 # Healthcheck
 HEALTHCHECK --interval=10s --timeout=3s CMD stat /tmp/.s.PGSQL.*

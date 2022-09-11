@@ -7,13 +7,13 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 10Gi
   local:
     path: /mnt/airflow/worker
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-airflow-worker-data
+  storageClassName: local-airflow-worker
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -31,7 +31,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 10Gi
   local:
@@ -45,7 +45,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - live2 
+          - live2
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -55,7 +55,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 10Gi
   local:
@@ -69,7 +69,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - master 
+          - master
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -79,7 +79,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 10Gi
   local:
@@ -93,7 +93,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - live1 
+          - live1
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -103,7 +103,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 10Gi
   local:
@@ -117,7 +117,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - live2 
+          - live2
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -127,7 +127,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 10Gi
   local:
@@ -141,7 +141,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - master 
+          - master
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -151,7 +151,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 5Gi
   local:
@@ -175,7 +175,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 5Gi
   local:
@@ -199,7 +199,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 5Gi
   local:
@@ -218,84 +218,12 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: master-airflow-postgresql-pv
-  labels:
-    type: local
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 8Gi
-  local:
-    path: /mnt/airflow/postgresql
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-airflow-postgresql
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - master
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: live1-airflow-postgresql-pv
-  labels:
-    type: local
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 8Gi
-  local:
-    path: /mnt/airflow/postgresql
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-airflow-postgresql
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - live1
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: live2-airflow-postgresql-pv
-  labels:
-    type: local
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 8Gi
-  local:
-    path: /mnt/airflow/postgresql
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-airflow-postgresql
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - live2
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
   name: master-airflow-git-sync-pv
   labels:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 5Gi
   local:
@@ -319,7 +247,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 5Gi
   local:
@@ -343,7 +271,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
     storage: 5Gi
   local:

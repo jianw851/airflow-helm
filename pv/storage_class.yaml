@@ -16,13 +16,6 @@ volumeBindingMode: WaitForFirstConsumer
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: local-airflow-postgresql
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
   name: local-airflow-git-sync
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
