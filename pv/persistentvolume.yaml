@@ -79,7 +79,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   capacity:
     storage: 10Gi
   local:
@@ -103,7 +103,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   capacity:
     storage: 10Gi
   local:
@@ -127,7 +127,7 @@ metadata:
     type: local
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   capacity:
     storage: 10Gi
   local:
