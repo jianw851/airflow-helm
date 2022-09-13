@@ -785,18 +785,7 @@ createUserJob:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "NoSchedule"
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-      matchLableKeys:
-        - master
-        - live1
-        - live2
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
   # In case you need to disable the helm hooks that create the jobs after install.
   # Disable this if you are using ArgoCD for example
   useHelmHooks: true
@@ -867,14 +856,7 @@ migrateDatabaseJob:
   #  - key: "node-role.kubernetes.io/master"
   #    operator: "Exists"
   #    effect: "NoSchedule"
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
   # In case you need to disable the helm hooks that create the jobs after install.
   # Disable this if you are using ArgoCD for example
   useHelmHooks: true
@@ -1118,14 +1100,7 @@ triggerer:
   #  - key: "node-role.kubernetes.io/master"
   #    operator: "Exists"
   #    effect: "NoSchedule"
-  #topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
 
   priorityClassName: ~
 
@@ -1222,14 +1197,7 @@ flower:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  #topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
 
   priorityClassName: ~
 
@@ -1278,14 +1246,7 @@ statsd:
   #  - key: "node-role.kubernetes.io/master"
   #    operator: "Exists"
   #    effect: "NoSchedule"
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
 
   priorityClassName: ~
 
@@ -1394,14 +1355,7 @@ pgbouncer:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  #topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
 
   priorityClassName: ~
 
@@ -1471,14 +1425,7 @@ redis:
   #  - key: "node-role.kubernetes.io/master"
   #    operator: "Exists"
   #    effect: "NoSchedule"
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
 
   # Set to 0 for backwards-compatiblity
   uid: 0
@@ -1547,14 +1494,7 @@ cleanup:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: ScheduleAnyway
-    - maxSkew: 1
-      topologyKey: "topology.kubernetes.io/zone"
-      whenUnsatisfiable: ScheduleAnyway
+  topologySpreadConstraints: []
 
   podAnnotations: {}
 
