@@ -43,7 +43,6 @@ securityContext: {}
 airflowHome: /opt/airflow
 
 # Default airflow repository -- overrides all the specific images below
-# The following image is a customized airflow image
 defaultAirflowRepository: liveget/apache-airflow
 
 # Default airflow tag to deploy
@@ -95,14 +94,22 @@ images:
     pullPolicy: IfNotPresent
 
 # Select certain nodes for airflow pods.
-nodeSelector: {"kubernetes.io/hostname": "live2"}
+# nodeSelector: {"kubernetes.io/hostname": "live2"}
+nodeSelector: {}
 affinity: {}
 tolerations:
   - key: "node-role.kubernetes.io/master"
     operator: "Exists"
     effect: "NoSchedule"
 
-topologySpreadConstraints: []
+# topologySpreadConstraints: []
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: "kubernetes.io/arch"
+    whenUnsatisfiable: ScheduleAnyway
+    matchLableKeys:
+      - amd64
+
 
 # Add common labels to all objects and pods defined in this chart.
 labels: {}
@@ -333,7 +340,7 @@ data:
   # Otherwise pass connection values in
   metadataConnection:
     user: jwang
-    pass: <todo> 
+    pass: 
     protocol: mysql
     host: 10.103.129.116
     port: 3306
@@ -344,7 +351,7 @@ data:
   # or, you can use a different database
   resultBackendConnection:
     user: jwang
-    pass:  <todo>
+    pass: 
     protocol: mysql
     host: 10.103.129.116
     port: 3306
@@ -422,7 +429,7 @@ kerberos:
 # Airflow Worker Config
 workers:
   # Number of airflow celery workers in StatefulSet
-  replicas: 1
+  replicas: 3
 
   # Command to use when running Airflow workers (templated).
   command: ~
@@ -531,8 +538,8 @@ workers:
   extraVolumeMounts: []
 
   # Select certain nodes for airflow worker pods.
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
-  # nodeSelector: {}
+  #nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   priorityClassName: ~
   affinity: {}
   # default worker affinity is:
@@ -548,7 +555,13 @@ workers:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "NoSchedule"
-  topologySpreadConstraints: []
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/arch"
+      whenUnsatisfiable: ScheduleAnyway
+      matchLableKeys:
+        - amd64
   # hostAliases to use in worker pods.
   # See:
   # https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
@@ -589,7 +602,7 @@ scheduler:
     command: ~
   # Airflow 2.0 allows users to run multiple schedulers,
   # However this feature is only recommended for MySQL 8+ and Postgres
-  replicas: 1
+  replicas: 3
 
   # Command to use when running the Airflow scheduler (templated).
   command: ~
@@ -650,7 +663,8 @@ scheduler:
   extraVolumeMounts: []
 
   # Select certain nodes for airflow scheduler pods.
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   affinity: {}
   # default scheduler affinity is:
   #  podAntiAffinity:
@@ -661,11 +675,18 @@ scheduler:
   #            component: scheduler
   #        topologyKey: kubernetes.io/hostname
   #      weight: 100
+  # tolerations: []
   tolerations:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "NoSchedule"
-  topologySpreadConstraints: []
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/arch"
+      whenUnsatisfiable: ScheduleAnyway
+      matchLableKeys:
+        - amd64
 
   priorityClassName: ~
 
@@ -747,7 +768,8 @@ createUserJob:
   extraVolumes: []
   extraVolumeMounts: []
 
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   affinity: {}
   #  podAntiAffinity:
   #    requiredDuringSchedulingIgnoredDuringExecution:
@@ -758,11 +780,23 @@ createUserJob:
   #          values:
   #          - live2
   #    topologyKey: "kubernetes.io/hostname"
+  # tolerations: []
   tolerations:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "NoSchedule"
-  topologySpreadConstraints: []
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+      matchLableKeys:
+        - master
+        - live1
+        - live2
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
   # In case you need to disable the helm hooks that create the jobs after install.
   # Disable this if you are using ArgoCD for example
   useHelmHooks: true
@@ -826,13 +860,21 @@ migrateDatabaseJob:
   extraVolumes: []
   extraVolumeMounts: []
 
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   affinity: {}
-  tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Exists"
-      effect: "NoSchedule"
-  topologySpreadConstraints: []
+  tolerations: []
+  #  - key: "node-role.kubernetes.io/master"
+  #    operator: "Exists"
+  #    effect: "NoSchedule"
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
   # In case you need to disable the helm hooks that create the jobs after install.
   # Disable this if you are using ArgoCD for example
   useHelmHooks: true
@@ -853,7 +895,7 @@ webserver:
     periodSeconds: 5
 
   # Number of webservers
-  replicas: 1
+  replicas: 2
 
   # Command to use when running the Airflow webserver (templated).
   command: ~
@@ -910,11 +952,11 @@ webserver:
   defaultUser:
     enabled: true
     role: Admin
-    username: jwang
+    username: 
     email: jw@liveget.com
     firstName: admin
     lastName: user
-    password: <todo>
+    password: 
 
   # Launch additional containers into webserver.
   extraContainers: []
@@ -961,13 +1003,13 @@ webserver:
     loadBalancerSourceRanges: []
 
   # Select certain nodes for airflow webserver pods.
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   priorityClassName: ~
   affinity: {}
-  tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Exists"
-      effect: "NoSchedule"
+  #  - key: "node-role.kubernetes.io/master"
+  #    operator: "Exists"
+  #    effect: "NoSchedule"
   # default webserver affinity is:
   #  podAntiAffinity:
   #    preferredDuringSchedulingIgnoredDuringExecution:
@@ -978,7 +1020,13 @@ webserver:
   #        topologyKey: kubernetes.io/hostname
   #      weight: 100
   tolerations: []
-  topologySpreadConstraints: []
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/arch"
+      whenUnsatisfiable: ScheduleAnyway
+      matchLableKeys:
+        - amd64
 
   podAnnotations: {}
 
@@ -1054,7 +1102,8 @@ triggerer:
   extraVolumeMounts: []
 
   # Select certain nodes for airflow triggerer pods.
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   affinity: {}
   # default triggerer affinity is:
   #  podAntiAffinity:
@@ -1065,11 +1114,18 @@ triggerer:
   #            component: triggerer
   #        topologyKey: kubernetes.io/hostname
   #      weight: 100
-  tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Exists"
-      effect: "NoSchedule"
-  topologySpreadConstraints: []
+  tolerations: []
+  #  - key: "node-role.kubernetes.io/master"
+  #    operator: "Exists"
+  #    effect: "NoSchedule"
+  #topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
 
   priorityClassName: ~
 
@@ -1166,7 +1222,14 @@ flower:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  topologySpreadConstraints: []
+  #topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
 
   priorityClassName: ~
 
@@ -1208,13 +1271,21 @@ statsd:
     extraAnnotations: {}
 
   # Select certain nodes for StatsD pods.
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   affinity: {}
-  tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Exists"
-      effect: "NoSchedule"
-  topologySpreadConstraints: []
+  tolerations: []
+  #  - key: "node-role.kubernetes.io/master"
+  #    operator: "Exists"
+  #    effect: "NoSchedule"
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
 
   priorityClassName: ~
 
@@ -1323,7 +1394,14 @@ pgbouncer:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  topologySpreadConstraints: []
+  #topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
 
   priorityClassName: ~
 
@@ -1386,13 +1464,21 @@ redis:
   safeToEvict: true
 
   # Select certain nodes for redis pods.
-  nodeSelector: {"kubernetes.io/hostname": "live2"}
+  # nodeSelector: {"kubernetes.io/hostname": "live2"}
+  nodeSelector: {}
   affinity: {}
-  tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Exists"
-      effect: "NoSchedule"
-  topologySpreadConstraints: []
+  tolerations: []
+  #  - key: "node-role.kubernetes.io/master"
+  #    operator: "Exists"
+  #    effect: "NoSchedule"
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
 
   # Set to 0 for backwards-compatiblity
   uid: 0
@@ -1461,7 +1547,14 @@ cleanup:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  topologySpreadConstraints: []
+  # topologySpreadConstraints: []
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
 
   podAnnotations: {}
 
@@ -1616,7 +1709,7 @@ dags:
     rev: HEAD
     depth: 1
     # the number of consecutive failures allowed before aborting
-    maxFailures: 1
+    maxFailures: 0
     # subpath within the repo where dags are located
     # should be "" if dags are at repo root
     subPath: "dags"
