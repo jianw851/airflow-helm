@@ -102,13 +102,13 @@ tolerations:
     operator: "Exists"
     effect: "NoSchedule"
 
-# topologySpreadConstraints: []
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: "kubernetes.io/arch"
-    whenUnsatisfiable: ScheduleAnyway
-    matchLableKeys:
-      - amd64
+topologySpreadConstraints: []
+# topologySpreadConstraints:
+#  - maxSkew: 1
+#    topologyKey: "kubernetes.io/arch"
+#    whenUnsatisfiable: ScheduleAnyway
+#    matchLableKeys:
+#      - amd64
 
 
 # Add common labels to all objects and pods defined in this chart.
@@ -541,27 +541,28 @@ workers:
   #nodeSelector: {"kubernetes.io/hostname": "live2"}
   nodeSelector: {}
   priorityClassName: ~
-  affinity: {}
+  # affinity: {}
   # default worker affinity is:
-  #  podAntiAffinity:
-  #    preferredDuringSchedulingIgnoredDuringExecution:
-  #    - podAffinityTerm:
-  #        labelSelector:
-  #          matchLabels:
-  #            component: worker
-  #        topologyKey: kubernetes.io/hostname
-  #      weight: 100
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              component: worker
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "NoSchedule"
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/arch"
-      whenUnsatisfiable: ScheduleAnyway
-      matchLableKeys:
-        - amd64
+  topologySpreadConstraints: []
+  # topologySpreadConstraints:
+  #  - maxSkew: 1
+  #    topologyKey: "kubernetes.io/arch"
+  #    whenUnsatisfiable: ScheduleAnyway
+  #    matchLableKeys:
+  #      - amd64
   # hostAliases to use in worker pods.
   # See:
   # https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
@@ -665,28 +666,29 @@ scheduler:
   # Select certain nodes for airflow scheduler pods.
   # nodeSelector: {"kubernetes.io/hostname": "live2"}
   nodeSelector: {}
-  affinity: {}
+  # affinity: {}
   # default scheduler affinity is:
-  #  podAntiAffinity:
-  #    preferredDuringSchedulingIgnoredDuringExecution:
-  #    - podAffinityTerm:
-  #        labelSelector:
-  #          matchLabels:
-  #            component: scheduler
-  #        topologyKey: kubernetes.io/hostname
-  #      weight: 100
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              component: scheduler
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   # tolerations: []
   tolerations:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "NoSchedule"
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/arch"
-      whenUnsatisfiable: ScheduleAnyway
-      matchLableKeys:
-        - amd64
+  topologySpreadConstraints: []
+  # topologySpreadConstraints:
+  #  - maxSkew: 1
+  #    topologyKey: "kubernetes.io/arch"
+  #    whenUnsatisfiable: ScheduleAnyway
+  #    matchLableKeys:
+  #      - amd64
 
   priorityClassName: ~
 
@@ -993,22 +995,23 @@ webserver:
   #    operator: "Exists"
   #    effect: "NoSchedule"
   # default webserver affinity is:
-  #  podAntiAffinity:
-  #    preferredDuringSchedulingIgnoredDuringExecution:
-  #    - podAffinityTerm:
-  #        labelSelector:
-  #          matchLabels:
-  #            component: webserver
-  #        topologyKey: kubernetes.io/hostname
-  #      weight: 100
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              component: webserver
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []
-  # topologySpreadConstraints: []
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: "kubernetes.io/arch"
-      whenUnsatisfiable: ScheduleAnyway
-      matchLableKeys:
-        - amd64
+  topologySpreadConstraints: []
+  # topologySpreadConstraints:
+  #  - maxSkew: 1
+  #    topologyKey: "kubernetes.io/arch"
+  #    whenUnsatisfiable: ScheduleAnyway
+  #    matchLableKeys:
+  #      - amd64
 
   podAnnotations: {}
 
