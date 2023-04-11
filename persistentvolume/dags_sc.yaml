@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: dags-sc
+provisioner: fuseim.pri/ifs
+parameters:
+  archiveOnDelete: "false"
+  mountOptions: vers=4.1

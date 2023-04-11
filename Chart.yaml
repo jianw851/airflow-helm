@@ -84,7 +84,7 @@ annotations:
         url: https://github.com/apache/airflow/pull/23737
   artifacthub.io/links: |
     - name: Documentation
-      url: https://airflow.apache.org/docs/helm-chart/1.6.0/
+      url: https://airflow.apache.org/docs/helm-chart/1.7.0/
   artifacthub.io/screenshots: |
     - title: DAGs View
       url: https://airflow.apache.org/docs/apache-airflow/2.3.0/_images/dags.png
@@ -127,4 +127,4 @@ name: airflow
 sources:
 - https://github.com/apache/airflow
 type: application
-version: 1.6.0
+version: 1.7.0

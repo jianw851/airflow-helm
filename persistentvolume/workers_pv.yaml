@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: airflow-workers-pv
+  labels:
+    type: airflow-workers
+spec:
+  storageClassName: workers-sc
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    path: /mnt/nfs/airflow/workers
+    server: live1
