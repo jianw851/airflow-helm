@@ -9,7 +9,7 @@ spec:
   capacity:
     storage: 10Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   nfs:
     path: /mnt/nfs/airflow/logs
     server: live1

@@ -9,7 +9,7 @@ spec:
   capacity:
     storage: 5Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   nfs:
     path: /mnt/nfs/airflow/dags
     server: live1

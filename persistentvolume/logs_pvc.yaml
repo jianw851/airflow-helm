@@ -6,7 +6,7 @@ metadata:
 spec:
   storageClassName: logs-sc
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 10Gi
